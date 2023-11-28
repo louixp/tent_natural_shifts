@@ -36,7 +36,7 @@ def get_group_loaders(dataset_name, groupby_fields, batch_size):
 		group_id_to_sample_ids[group_id].append(i)
 	
 	return {
-		group_id: get_train_loader(
+		grouper.group_str(group_id): get_train_loader(
 			'standard',
 			WILDSSubset(test_data, sample_ids, None),
 			batch_size=batch_size
