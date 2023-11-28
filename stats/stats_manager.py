@@ -8,6 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.utils.checkpoint import checkpoint
 from torch.utils.data import DataLoader
+from torchvision.models.resnet import Bottleneck
 import tqdm
 
 
@@ -44,7 +45,6 @@ class StatsManager:
             loss.backward()
 
             self._save_gradients()
-            breakpoint()
     
     def save_stats(self, path: str) -> None:
         if not os.path.exists(path):
@@ -63,7 +63,8 @@ class StatsManager:
                     {
                         k: v / self.batch_size / self.n_batches 
                         for k, v in getattr(self, attr).items()
-                    }
+                    },
+                    fp
                 )
 
         gradients_attrs = [
@@ -77,7 +78,8 @@ class StatsManager:
                     {
                         k: v / self.n_batches 
                         for k, v in getattr(self, attr).items()
-                    }
+                    },
+                    fp
                 )
 
     def _setup_hooks(self):
@@ -88,7 +90,7 @@ class StatsManager:
         self.backward_intermediates_2nd_moment = dict()
 
         for name, module in self.model.named_modules():
-            if len(list(module.children())) == 0:
+            if isinstance(module, Bottleneck) or name == 'fc':
                 def forward_hook(module, input, output, name=name):
                     output_np = output.detach().cpu().numpy()
                     mean = output_np.sum(axis=0)
