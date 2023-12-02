@@ -37,7 +37,8 @@ def get_imagenet_c_group_loaders(data_dir, batch_size):
             group_loaders[f'{corruption}_{severity}'] = DataLoader(
                 ImageNetC(data_dir, corruption, severity),
                 batch_size=batch_size,
-                shuffle=True
+                shuffle=True,
+                drop_last=True
             )
             
     return group_loaders 
