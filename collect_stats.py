@@ -37,10 +37,11 @@ if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
 	parser.add_argument('--dataset', required=True)
 	parser.add_argument('--out-dir', default='resnet_intermediates')
+	parser.add_argument('--batch-size', default=200)
 	args = parser.parse_args()
 
 	print('Loading data loaders...')
-	group_loaders = get_group_loaders(args.dataset, batch_size=100)
+	group_loaders = get_group_loaders(args.dataset, batch_size=args.batch_size)
 	
 	for group_id, data_loader in group_loaders.items():
 		print(group_id)
