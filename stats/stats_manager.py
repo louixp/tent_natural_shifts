@@ -41,8 +41,8 @@ class StatsManager:
             self.max_backward_update = 0
             self.max_grad_update = 0
             
-            x.requires_grad = True # hack for gradient checkpointing
             if self.use_gradient_checkpoint:
+                x.requires_grad = True
                 y_pred = checkpoint(self.model, x.to(self.device))
             else:
                 y_pred = self.model(x.to(self.device))
