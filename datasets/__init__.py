@@ -9,8 +9,8 @@ def get_group_loaders(name, batch_size):
 	if name in wilds_datasets.GROUPBY_FIELDS:
 		return wilds_datasets.get_group_loaders(
 			name, wilds_datasets.GROUPBY_FIELDS[name], batch_size)
-	elif name == 'ImageNet-C':
+	elif name == 'imagenet-c':
 		return imagenet_datasets.get_imagenet_c_group_loaders(
-			DATA_DIR, batch_size)
+			os.path.join(DATA_DIR, 'imagenet-c'), batch_size)
 	else:
 		raise ValueError(f'Dataset {name} does not exist.')

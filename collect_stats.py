@@ -26,7 +26,12 @@ def load_model(dataset_name):
 
 
 def adapt_model(model, adaptor=None):
-	return model
+	if adaptor is None:
+		model.eval()
+		return model
+	else:
+		raise NotImplementedError
+
 
 if __name__ == '__main__':
 	parser = argparse.ArgumentParser()
@@ -43,7 +48,6 @@ if __name__ == '__main__':
 		model = load_model(args.dataset)
 		print('Adapting model...')
 		model = adapt_model(model)
-		
 		stats_manager = StatsManager(model, data_loader, 'cuda')
 		stats_manager.collect_stats()
 		stats_manager.save_stats(
