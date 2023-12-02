@@ -17,6 +17,7 @@ class StatsManager:
         model: nn.Module,
         data_loader: DataLoader,
         device: str,
+        use_gradient_checkpoint: bool = False
     ):
         self.model = model.to(device)
         for module in self.model.modules():
@@ -25,6 +26,7 @@ class StatsManager:
 
         self.data_loader = data_loader
         self.device = device
+        self.use_gradient_checkpoint = use_gradient_checkpoint
 
         self._setup_hooks()
         self.gradients_mean = defaultdict(float)
@@ -40,7 +42,10 @@ class StatsManager:
             self.max_grad_update = 0
             
             x.requires_grad = True # hack for gradient checkpointing
-            y_pred = checkpoint(self.model, x.to(self.device))
+            if self.use_gradient_checkpoint:
+                y_pred = checkpoint(self.model, x.to(self.device))
+            else:
+                y_pred = self.model(x.to(self.device))
             loss = F.cross_entropy(y_pred, y_true.to(self.device))
             loss.backward()
 
