@@ -1,4 +1,5 @@
 from collections import defaultdict
+import json
 import pickle
 import os
 
@@ -31,10 +32,12 @@ class StatsManager:
         self._setup_hooks()
         self.gradients_mean = defaultdict(float)
         self.gradients_2nd_moment = defaultdict(float)
+        self.loss, self.acc = 0, 0 
     
     def collect_stats(self) -> None:
         self.n_batch = 0
         for x, y_true, _ in (pbar := tqdm.tqdm(self.data_loader)):
+            x, y_true = x.to(self.device), y_true.to(self.device)
             self.n_batch += 1
             # self.relu_invocation_counter = defaultdict(int)
             self.max_forward_update = 0
@@ -43,16 +46,20 @@ class StatsManager:
             
             if self.use_gradient_checkpoint:
                 x.requires_grad = True
-                y_pred = checkpoint(self.model, x.to(self.device))
+                y_pred = checkpoint(self.model, x)
             else:
-                y_pred = self.model(x.to(self.device))
-            loss = F.cross_entropy(y_pred, y_true.to(self.device))
+                y_pred = self.model(x)
+            loss = F.cross_entropy(y_pred, y_true)
             loss.backward()
 
             self._save_gradients()
             self.model.zero_grad()
 
-            pbar.set_description(f'max update|fwd{self.max_backward_update:.0e}|bwk{self.max_backward_update:.0e}|grad{self.max_grad_update:.0e}')
+            self.loss += (loss.item() - self.loss) / self.n_batch
+            acc = (y_pred.argmax(1) == y_true).float().mean().item()
+            self.acc += (acc - self.acc) / self.n_batch
+
+            pbar.set_description(f'loss{self.loss:.2f}|acc{self.acc:.2f}||max update|fwd{self.max_backward_update:.0e}|bwk{self.max_backward_update:.0e}|grad{self.max_grad_update:.0e}')
     
     def save_stats(self, path: str) -> None:
         if not os.path.exists(path):
@@ -74,6 +81,9 @@ class StatsManager:
                         k: v.cpu().numpy()
                         for k, v in getattr(self, attr).items()
                     }, fp)
+        
+        with open(os.path.join(path, f'loss_and_acc.json'), 'w') as fp:
+            json.dump({'loss': self.loss, 'acc': self.acc}, fp)
 
     def _setup_hooks(self):
         self.forward_intermediates_mean = defaultdict(float)
