@@ -120,7 +120,9 @@ class StatsManager:
                     )
 
                     if isinstance(module, Bottleneck):
-                        self.activation_probability[name] = (output_detached != 0).float().mean(0)
+                        activation_probability = (output_detached != 0).float().mean(0)
+                        self.activation_probability[name] += (
+                            activation_probability - self.activation_probability[name]) / self.n_batch
                     
                 module.register_forward_hook(forward_hook)
                 
